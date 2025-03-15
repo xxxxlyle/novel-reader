@@ -233,6 +233,18 @@ export default {
   mounted() {
     this.loadBooks();
   },
+  // 添加 activated 生命周期钩子，用于处理 keep-alive 组件的激活
+  activated() {
+    // 每次返回书架页面时重新加载书籍数据
+    this.loadBooks();
+  },
+  // 添加路由守卫钩子
+  beforeRouteEnter(to, from, next) {
+    next((vm) => {
+      // 当导航到这个路由时，重新加载书籍数据
+      vm.loadBooks();
+    });
+  },
   methods: {
     loadBooks() {
       // 从本地存储加载书籍列表
@@ -373,6 +385,7 @@ export default {
       this.bookToDeleteId = null;
     },
 
+    // 修改 saveBook 方法
     saveBook() {
       if (!this.newBook.title) {
         alert("请输入书名");
@@ -398,8 +411,9 @@ export default {
         }
       } else {
         // 创建新书籍
+        const newBookId = "book-" + Date.now();
         const newBook = {
-          id: "book-" + Date.now(),
+          id: newBookId,
           title: this.newBook.title,
           description: this.newBook.description,
           emoji: this.newBook.emoji,
@@ -409,6 +423,9 @@ export default {
         };
 
         this.books.push(newBook);
+
+        // 初始化新书的空章节数组
+        localStorage.setItem(`book-chapters-${newBookId}`, JSON.stringify([]));
       }
 
       this.saveBooks();

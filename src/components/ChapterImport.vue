@@ -1,6 +1,7 @@
 <template>
   <div class="chapter-import">
-    <button class="btn btn-primary import-button" @click="showModal = true">
+    <!-- Claude风格的导入按钮 -->
+    <button class="claude-import-button" @click="showModal = true">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="16"
@@ -11,11 +12,11 @@
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
-        class="button-icon"
+        class="claude-button-icon"
       >
         <path d="M12 5v14M5 12h14"></path>
       </svg>
-      导入新章节
+      <span>导入新章节</span>
     </button>
 
     <!-- 导入模态框 -->
@@ -687,7 +688,43 @@ export default {
   gap: var(--spacing-sm);
 }
 
+.claude-import-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+  box-shadow: 0 2px 4px rgba(126, 87, 194, 0.2);
+}
+
+.claude-import-button:hover {
+  background-color: var(--primary-dark);
+  box-shadow: 0 4px 8px rgba(126, 87, 194, 0.25);
+  transform: translateY(-1px);
+}
+
+.claude-import-button:active {
+  transform: translateY(0px);
+  box-shadow: 0 1px 2px rgba(126, 87, 194, 0.2);
+}
+
+.claude-button-icon {
+  margin-right: 8px;
+}
+
 @media (max-width: 768px) {
+  .claude-import-button {
+    font-size: 0.85rem;
+    padding: 8px 14px;
+  }
+
   .tabs {
     overflow-x: auto;
     white-space: nowrap;

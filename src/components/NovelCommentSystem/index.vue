@@ -1,15 +1,36 @@
 <template>
   <div class="novel-comment-system" :class="{ 'reader-mode': isReaderMode }">
-    <header class="header">
-      <div class="container">
-        <h1>章节内容与评论对照分析</h1>
+    <!-- Claude风格的标题栏 -->
+    <header class="claude-header">
+      <div class="container claude-header-container">
+        <div class="claude-title-wrapper">
+          <div class="claude-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+          </div>
+          <h1 class="claude-title">章节内容与评论对照分析</h1>
+        </div>
       </div>
     </header>
 
-    <div class="container tools-container">
-      <div class="tools-left">
+    <div class="container claude-tools-container">
+      <div class="claude-tools-left">
+        <!-- Claude风格的导入按钮 -->
         <chapter-import @chapter-imported="handleChapterImport" />
-        <button class="btn btn-text mode-toggle" @click="toggleMode">
+
+        <button class="claude-btn mode-toggle" @click="toggleMode">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -20,7 +41,7 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="icon"
+            class="claude-icon-sm"
           >
             <path d="M4 14h16M4 10h16"></path>
             <path d="M12 22v-6"></path>
@@ -29,7 +50,7 @@
             ></path>
             <path d="M18 12v-2"></path>
           </svg>
-          {{ isReaderMode ? "评论模式" : "阅读模式" }}
+          <span>{{ isReaderMode ? "评论模式" : "阅读模式" }}</span>
         </button>
       </div>
 
@@ -173,6 +194,15 @@ export default {
         this.chapters.find((chapter) => chapter.id === this.currentChapterId) ||
         null
       );
+    },
+  },
+  watch: {
+    bookId: {
+      immediate: true,
+      handler(newId) {
+        // 当书籍ID变化时，重新加载该书籍的章节
+        this.loadChaptersFromLocalStorage();
+      },
     },
   },
   methods: {
@@ -425,18 +455,42 @@ export default {
     },
 
     loadChaptersFromLocalStorage() {
-      const chaptersData = localStorage.getItem("chapters");
+      // 确保使用正确的书籍ID关联章节数据
+      const chaptersData = localStorage.getItem(`book-chapters-${this.bookId}`);
       if (chaptersData) {
         try {
           this.chapters = JSON.parse(chaptersData);
           if (this.chapters.length > 0) {
             this.currentChapterId = this.chapters[0].id;
             this.loadUserCommentsFromLocalStorage();
+          } else {
+            // 空章节列表的处理
+            this.currentChapterId = "";
+            this.userComments = [];
           }
         } catch (error) {
           console.error("加载章节数据失败:", error);
+          this.chapters = [];
+          this.currentChapterId = "";
+          this.userComments = [];
         }
+      } else {
+        // 没有章节数据的初始化
+        this.chapters = [];
+        this.currentChapterId = "";
+        this.userComments = [];
       }
+    },
+
+    // 修改 saveChaptersToLocalStorage 方法，确保使用正确的书籍ID
+    saveChaptersToLocalStorage() {
+      localStorage.setItem(
+        `book-chapters-${this.bookId}`,
+        JSON.stringify(this.chapters)
+      );
+
+      // 更新书籍的章节计数
+      this.updateBookChapterCount();
     },
 
     saveUserCommentsToLocalStorage() {
@@ -492,30 +546,30 @@ export default {
       if (this.chapters.length === 0) {
         // 只有在没有章节时才导入示例
         const sampleChapter = {
-          id: "sample-chapter",
+          id: "sample-chapter-" + Date.now(), // 添加时间戳避免ID冲突
           title: "示例章节",
           paragraphs: [
             {
-              id: "para-1",
+              id: "para-1-" + Date.now(),
               number: "1.",
               content:
                 "这是示例章节的第一个段落。点击任何段落可以添加您的评论。",
             },
             {
-              id: "para-2",
+              id: "para-2-" + Date.now(),
               number: "2.",
               content: '您可以使用"导入新章节"按钮来添加您自己的小说章节内容。',
             },
             {
-              id: "para-3",
+              id: "para-3-" + Date.now(),
               number: "3.",
               content: "系统支持从纯文本或HTML导入内容，也可以直接粘贴文本。",
             },
           ],
           comments: [
             {
-              id: "comment-1",
-              targetParagraph: "para-1",
+              id: "comment-1-" + Date.now(),
+              targetParagraph: "para-1-" + Date.now(), // 确保ID匹配上面的段落ID
               title: "段落1：",
               content: "这是一个示例评论，展示了评论功能的使用方式。",
             },
@@ -523,6 +577,7 @@ export default {
           overallComment:
             "这是一个示例章节，用于展示系统的基本功能。您可以导入自己的章节内容进行分析。",
           createdAt: new Date().toISOString(),
+          bookId: this.bookId, // 确保关联到当前书籍
         };
 
         this.chapters.push(sampleChapter);
@@ -531,6 +586,7 @@ export default {
       }
     },
   },
+
   mounted() {
     this.loadUserPreferences();
     this.loadChaptersFromLocalStorage();
@@ -625,8 +681,105 @@ export default {
   max-width: 500px;
 }
 
+.claude-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--spacing-lg) 0;
+  transition: all var(--transition-normal) ease;
+}
+
+.claude-header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.claude-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.claude-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+}
+
+.claude-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  letter-spacing: -0.2px;
+}
+
+.claude-tools-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: var(--spacing-lg) auto;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  padding: 0 var(--spacing-md);
+}
+
+.claude-tools-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.claude-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.claude-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.claude-icon-sm {
+  margin-right: 8px;
+}
+
+.mode-toggle {
+  display: flex;
+  align-items: center;
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
+  .claude-title {
+    font-size: 1.4rem;
+  }
+
+  .claude-tools-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .claude-tools-left {
+    justify-content: space-between;
+    width: 100%;
+  }
+
   .header h1 {
     font-size: 1.5rem;
   }
